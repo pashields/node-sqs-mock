@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+*.DS_Store
+config/user.coffee
+logs
+*.json.gz
+logging.txt
+log_archive*
+doc
+*.pyc

@@ -1,0 +1,12 @@
+{
+  "name": "sqs-mock",
+  "version": "1.0.0",
+  "description": "A mock for the AWS SQS module",
+  "dependencies": {
+    "coffee-script": "1.6.3"
+  },
+  "devDependencies": {
+    "chai": "1.2.0",
+    "mocha": "1.4.0"
+  }
+}

@@ -1,0 +1,6 @@
+--compilers coffee:coffee-script
+--ui bdd
+--reporter spec
+--recursive
+--timeout 30000
+--bail
