@@ -19,6 +19,15 @@ describe 'Queue Calls:', ->
           assert.equal url, data.QueueUrl, "getQueueUrl returned different url than create"
           done()
 
+    it 'should create the queue with specified attributes', (done) ->
+      options = {QueueName: "my queue", Attributes: {DelaySeconds: 100}}
+      sqs.createQueue options, (err, data) ->
+        assert not err?, "Error when creating queue with attributes"
+        sqs.getQueueAttributes {QueueUrl: data.QueueUrl, Attributes: ["DelaySeconds"]}, (err, data) ->
+          assert not err?
+          assert.equal data.Attributes.DelaySeconds, 100
+          done()
+
   describe 'when createQueue is called on an existing queue', ->
     options = {QueueName: "my queue"}
     it 'should simply return the queue url', (done) ->
