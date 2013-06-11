@@ -59,7 +59,6 @@ class SQSQueue
 
   getMessage: (VisibilityTimeout, WaitTimeSeconds, callback) ->
     msg = @messages.pop()
-    debugger
     WaitTimeSeconds ?= @ReceiveMessageWaitTimeSeconds
 
     if not msg?
