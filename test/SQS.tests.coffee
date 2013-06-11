@@ -12,21 +12,21 @@ describe 'Queue Calls:', ->
       options = {QueueName: "my queue"}
       sqs.createQueue options, (err, data) ->
         assert not err?, "Error when creating queue"
-        url = data.QueueURL
+        url = data.QueueUrl
         assert url?, "No url returned by queue creation"
         sqs.getQueueUrl options, (err, data) ->
           assert not err?, "Error when getting existing queue url"
-          assert.equal url, data.QueueURL, "getQueueUrl returned different url than create"
+          assert.equal url, data.QueueUrl, "getQueueUrl returned different url than create"
           done()
 
   describe 'when createQueue is called on an existing queue', ->
     options = {QueueName: "my queue"}
     it 'should simply return the queue url', (done) ->
       sqs.createQueue options, (err, data) ->
-        url = data.QueueURL
+        url = data.QueueUrl
         sqs.createQueue options, (err, data) ->
           assert not err?, "Calling create on an existing queue fails"
-          assert.equal url, data.QueueURL, "URL returned by create on existing queue is not correct"
+          assert.equal url, data.QueueUrl, "URL returned by create on existing queue is not correct"
           done()
 
 describe 'Message Calls:', ->
@@ -37,9 +37,9 @@ describe 'Message Calls:', ->
   beforeEach (done) ->
     sqs = new SQS()
     sqs.createQueue {QueueName: "PARTY TIME"}, (err, data) ->
-      url = data.QueueURL
+      url = data.QueueUrl
       options =
-        QueueURL: url
+        QueueUrl: url
         MessageBody: "LEMMY"
       done()
 
@@ -57,7 +57,7 @@ describe 'Message Calls:', ->
           assert not err?, "Error when recieving message"
           assert.equal data.Body, options.MessageBody, "Recieved body does not match sent"
           assert data.ReceiptHandle?, "No receipt handle on recieved message"
-          sqs.deleteMessage {QueueURL: url, ReceiptHandle: data.ReceiptHandle}, (err, data) ->
+          sqs.deleteMessage {QueueUrl: url, ReceiptHandle: data.ReceiptHandle}, (err, data) ->
             assert not err?
             done()
 

@@ -83,12 +83,12 @@ class SQS
         url = options.QueueName
         @_nameToURL[options.QueueName] = url
         @_messageQueues[url] = new SQSQueue()
-        callback null, {QueueURL:url}
+        callback null, {QueueUrl:url}
 
   deleteMessage: (options, callback) ->
-    QueueURL = options.QueueURL
+    QueueUrl = options.QueueUrl
     RecieptHandle = options.RecieptHandle
-    queue = @_messageQueues[QueueURL]
+    queue = @_messageQueues[QueueUrl]
     message = queue.deleteMessage RecieptHandle
     
     if message?
@@ -102,20 +102,20 @@ class SQS
     if not url?
       callback new Error("Queue with that name does not exist"), null
     else 
-      callback null, {QueueURL:url}
+      callback null, {QueueUrl:url}
 
   recieveMessage: (options, callback) ->
-    QueueURL = options.QueueURL
+    QueueUrl = options.QueueUrl
     MaxNumberOfMessages = options.MaxNumberOfMessages
     VisibilityTimeout = options.VisibilityTimeout
     WaitTimeSeconds = options.WaitTimeSeconds
-    @_messageQueues[QueueURL].getMessage VisibilityTimeout, WaitTimeSeconds, callback
+    @_messageQueues[QueueUrl].getMessage VisibilityTimeout, WaitTimeSeconds, callback
 
   sendMessage: (options, callback) ->
-    QueueURL = options.QueueURL
+    QueueUrl = options.QueueUrl
     MessageBody = options.MessageBody
     DelaySeconds = options.DelaySeconds
-    msg = @_messageQueues[QueueURL].addMessage MessageBody, DelaySeconds
+    msg = @_messageQueues[QueueUrl].addMessage MessageBody, DelaySeconds
     callback null, {MessageId: msg.MessageId}
 
 module.exports = SQS
