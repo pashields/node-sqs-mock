@@ -10,10 +10,10 @@ class SQSQueue
     @waitingRequests = []
     @delayedMessageCount = 0
 
-    @VisibilityTimeout = 60
+    @VisibilityTimeout = '60'
     @CreatedTimestamp = new Date().valueOf()
     @LastModifiedTimestamp = @CreatedTimestamp
-    @DelaySeconds = 0
+    @DelaySeconds = '0'
     @ReceiveMessageWaitTimeSeconds = 1
 
     @[key] = Attributes[key] for key in Object.keys(Attributes) if Attributes?
@@ -45,6 +45,7 @@ class SQSQueue
       MessageId: id++
 
     delayTime ?= @DelaySeconds
+    delayTime = Number(delayTime)
     if delayTime > 0
       @delayedMessageCount++
       setTimeout (=> 
@@ -60,6 +61,7 @@ class SQSQueue
   getMessage: (VisibilityTimeout, WaitTimeSeconds, callback) ->
     msg = @messages.pop()
     WaitTimeSeconds ?= @ReceiveMessageWaitTimeSeconds
+    WaitTimeSeconds = Number(WaitTimeSeconds)
 
     if not msg?
       if WaitTimeSeconds is 0
@@ -78,7 +80,7 @@ class SQSQueue
 
     msg.ReceiptHandle = recieptHandle++
     @hiddenMessages[msg.RecieptHandle] = msg
-    setTimeout(VisibilityTimeout * 1000, (=> @returnMessage(msg.RecieptHandle)))
+    setTimeout((=> @returnMessage(msg.RecieptHandle)), Number(VisibilityTimeout) * 1000)
     callback null, msg
 
   returnMessage: (RecieptHandle) ->
@@ -127,7 +129,7 @@ class SQS
 
   getQueueAttributes: (options, callback) ->
     QueueUrl = options.QueueUrl
-    Attributes = options.Attributes
+    Attributes = options.AttributeNames
     attrs = @_messageQueues[QueueUrl].getAttributes()
     reqAttrs = {}
     for attrKey in Attributes
@@ -146,12 +148,16 @@ class SQS
     else 
       callback null, {QueueUrl:url}
 
-  recieveMessage: (options, callback) ->
+  receiveMessage: (options, callback) ->
     QueueUrl = options.QueueUrl
     MaxNumberOfMessages = options.MaxNumberOfMessages
     VisibilityTimeout = options.VisibilityTimeout
     WaitTimeSeconds = options.WaitTimeSeconds
-    @_messageQueues[QueueUrl].getMessage VisibilityTimeout, WaitTimeSeconds, callback
+    @_messageQueues[QueueUrl].getMessage VisibilityTimeout, WaitTimeSeconds, (err, msg) ->
+      if err?
+        callback err, null
+      else
+        callback null, {Messages: [msg]}
 
   sendMessage: (options, callback) ->
     QueueUrl = options.QueueUrl

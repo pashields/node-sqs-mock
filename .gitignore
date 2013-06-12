@@ -8,3 +8,4 @@ logging.txt
 log_archive*
 doc
 *.pyc
+credentials.json

@@ -1,5 +1,9 @@
 assert = require('chai').assert
 SQS    = require '../src/SQS'
+aws    = require 'aws-sdk'
+
+# aws.config.loadFromPath 'credentials.json'
+# sqs = new aws.SQS()
 
 describe 'Queue Calls:', ->
   sqs = undefined
@@ -9,8 +13,9 @@ describe 'Queue Calls:', ->
 
   describe 'when createQueue is called on a non-existant queue', ->
     it 'should create the queue', (done) ->
-      options = {QueueName: "my queue"}
+      options = {QueueName: "testing123"}
       sqs.createQueue options, (err, data) ->
+        console.log err
         assert not err?, "Error when creating queue"
         url = data.QueueUrl
         assert url?, "No url returned by queue creation"
@@ -20,16 +25,16 @@ describe 'Queue Calls:', ->
           done()
 
     it 'should create the queue with specified attributes', (done) ->
-      options = {QueueName: "my queue", Attributes: {DelaySeconds: 100}}
+      options = {QueueName: "testing123", Attributes: {DelaySeconds: '100'}}
       sqs.createQueue options, (err, data) ->
         assert not err?, "Error when creating queue with attributes"
-        sqs.getQueueAttributes {QueueUrl: data.QueueUrl, Attributes: ["DelaySeconds"]}, (err, data) ->
+        sqs.getQueueAttributes {QueueUrl: data.QueueUrl, AttributeNames: ["DelaySeconds"]}, (err, data) ->
           assert not err?
-          assert.equal data.Attributes.DelaySeconds, 100
+          assert.equal data.Attributes.DelaySeconds, '100'
           done()
 
   describe 'when createQueue is called on an existing queue', ->
-    options = {QueueName: "my queue"}
+    options = {QueueName: "testing123", Attributes: {DelaySeconds: '100'}}
     it 'should simply return the queue url', (done) ->
       sqs.createQueue options, (err, data) ->
         url = data.QueueUrl
@@ -42,14 +47,20 @@ describe 'Message Calls:', ->
   sqs     = undefined
   url     = undefined
   options = undefined
+  receiveOptions = undefined
 
   beforeEach (done) ->
     sqs = new SQS()
-    sqs.createQueue {QueueName: "PARTY TIME"}, (err, data) ->
+    sqs.createQueue {QueueName: "testing123"}, (err, data) ->
       url = data.QueueUrl
       options =
         QueueUrl: url
         MessageBody: "LEMMY"
+      receiveOptions =
+        QueueUrl: url
+        WaitTimeSeconds: 10
+        VisibilityTimeout: 2
+        MaxNumberOfMessages: 1
       done()
 
   it 'a message can be successfully sent', (done) ->
@@ -62,8 +73,10 @@ describe 'Message Calls:', ->
     it 'can be recieved and deleted', (done) ->
       sqs.sendMessage options, (err, data) ->
         assert not err?, "Error when sending message"
-        sqs.recieveMessage options, (err, data) ->
+        sqs.receiveMessage {QueueUrl: url, WaitTimeSeconds: 10}, (err, data) ->
+          debugger
           assert not err?, "Error when recieving message"
+          data = data.Messages[0]
           assert.equal data.Body, options.MessageBody, "Recieved body does not match sent"
           assert data.ReceiptHandle?, "No receipt handle on recieved message"
           sqs.deleteMessage {QueueUrl: url, ReceiptHandle: data.ReceiptHandle}, (err, data) ->
@@ -72,11 +85,13 @@ describe 'Message Calls:', ->
 
   describe 'when two messages are sent', ->
     it 'should return them in order', (done) ->
-      sqs.sendMessage options, ->
-        sqs.sendMessage options, ->
-          sqs.recieveMessage options, (err, data) ->
+      sqs.sendMessage {QueueUrl: url, MessageBody: '1'}, ->
+        sqs.sendMessage {QueueUrl: url, MessageBody: '2'}, ->
+          sqs.receiveMessage receiveOptions, (err, data) ->
+            data = data.Messages[0]
             assert not err?, "Error recieving first message"
-            sqs.recieveMessage options, (err, data2) ->
+            sqs.receiveMessage receiveOptions, (err, data2) ->
+              data2 = data2.Messages[0]
               assert not err?, "Error recieving second message"
               assert data2.MessageId?, "No id on message"
               assert data.MessageId < data2.MessageId, "Messages sent out of order"
@@ -87,21 +102,28 @@ describe 'Message Calls:', ->
       options.DelaySeconds = 2
       sqs.sendMessage options, (err, data) ->
         assert not err?, "Error sending delayed message"
-        options.WaitTimeSeconds = 0
-        sqs.recieveMessage options, (err, data) ->
+
+        receiveOptionsCopy =
+          QueueUrl: url
+          WaitTimeSeconds: 0
+          VisibilityTimeout: 2
+          MaxNumberOfMessages: 1
+
+        sqs.receiveMessage receiveOptionsCopy, (err, data) ->
+          debugger
           assert err?, "Error calling recieve when no messages are available"
+          done()
           setTimeout (->
-            sqs.recieveMessage options, (err, data) ->
+            sqs.receiveMessage receiveOptions, (err, data) ->
               assert not err?, "Error when recieving delayed message that should be available"
               assert data.Body, options.MessageBody, "Delayed message body does not match sent body"
               done()), 2000
 
   describe 'a client blocking on an empty queue', ->
     it 'should recieve a message after it\'s addition', (done) ->
-      options.WaitTimeSeconds = 20
-      sqs.recieveMessage options, (err, data) ->
+      sqs.receiveMessage receiveOptions, (err, data) ->
         assert not err?, "Error in recieving message after block"
-        assert.equal data.Body, options.MessageBody
+        assert.equal data.Messages[0].Body, options.MessageBody
         done()
       sqs.sendMessage options, (err, data) ->
         assert not err?
