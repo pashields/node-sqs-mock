@@ -79,24 +79,24 @@ class SQSQueue
         return @waitingRequests.unshift request
 
     msg.ReceiptHandle = recieptHandle++
-    @hiddenMessages[msg.RecieptHandle] = msg
-    setTimeout((=> @returnMessage(msg.RecieptHandle)), Number(VisibilityTimeout) * 1000)
+    @hiddenMessages[msg.ReceiptHandle] = msg
+    setTimeout((=> @returnMessage(msg.ReceiptHandle)), Number(VisibilityTimeout) * 1000)
     callback null, msg
 
-  returnMessage: (RecieptHandle) ->
-    msg = @hiddenMessages[RecieptHandle]
+  returnMessage: (ReceiptHandle) ->
+    msg = @hiddenMessages[ReceiptHandle]
     if msg?
-      delete @hiddenMessages[RecieptHandle]
+      delete @hiddenMessages[ReceiptHandle]
       @addMessage msg
 
-  deleteMessage: (RecieptHandle) ->
-    msg = @hiddenMessages[RecieptHandle]
+  deleteMessage: (ReceiptHandle) ->
+    msg = @hiddenMessages[ReceiptHandle]
     if msg?
-      delete @hiddenMessages[RecieptHandle]
+      delete @hiddenMessages[ReceiptHandle]
     else
-      for i in [0..@messages.length]
+      for i in [0...@messages.length]
         candidate = @messages[i]
-        if candidate.RecieptHandle is RecieptHandle
+        if candidate.ReceiptHandle is ReceiptHandle
           msg = candidate
           @messages.splice i, 1
           break
@@ -118,9 +118,9 @@ class SQS
 
   deleteMessage: (options, callback) ->
     QueueUrl = options.QueueUrl
-    RecieptHandle = options.RecieptHandle
+    ReceiptHandle = options.ReceiptHandle
     queue = @_messageQueues[QueueUrl]
-    message = queue.deleteMessage RecieptHandle
+    message = queue.deleteMessage ReceiptHandle
     
     if message?
       callback null, message
