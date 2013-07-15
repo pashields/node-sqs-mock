@@ -62,6 +62,7 @@ class SQSQueue
     msg = @messages.pop()
     WaitTimeSeconds ?= @ReceiveMessageWaitTimeSeconds
     WaitTimeSeconds = Number(WaitTimeSeconds)
+    VisibilityTimeout ?= @VisibilityTimeout
 
     if not msg?
       if WaitTimeSeconds is 0
@@ -87,7 +88,9 @@ class SQSQueue
     msg = @hiddenMessages[ReceiptHandle]
     if msg?
       delete @hiddenMessages[ReceiptHandle]
-      @addMessage msg
+      @messages.unshift(msg)
+      process.nextTick =>
+        @checkRequests()
 
   deleteMessage: (ReceiptHandle) ->
     msg = @hiddenMessages[ReceiptHandle]
