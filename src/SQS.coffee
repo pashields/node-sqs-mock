@@ -1,3 +1,5 @@
+async = require 'async'
+
 delayTime = 30
 
 id = 0
@@ -32,12 +34,13 @@ class SQSQueue
 
   checkRequests: ->
     # Expected keys VisibilityTimeout, callback
-    for request in @waitingRequests
+    async.eachSeries @waitingRequests, (request, cb) =>
       @getMessage request.VisibilityTimeout, 0, (err, data) =>
         if not err?
           i = @waitingRequests.indexOf request
           @waitingRequests.splice i, 1
           request.callback err, data
+        cb()
 
   addMessage: (body, delayTime) ->
     msg =
@@ -48,7 +51,7 @@ class SQSQueue
     delayTime = Number(delayTime)
     if delayTime > 0
       @delayedMessageCount++
-      setTimeout (=> 
+      setTimeout (=>
         @delayedMessageCount--
         @messages.unshift(msg)
         @checkRequests()), delayTime * 1000
@@ -124,7 +127,7 @@ class SQS
     ReceiptHandle = options.ReceiptHandle
     queue = @_messageQueues[QueueUrl]
     message = queue.deleteMessage ReceiptHandle
-    
+
     if message?
       callback null, message
     else
@@ -136,7 +139,7 @@ class SQS
     attrs = @_messageQueues[QueueUrl].getAttributes()
     reqAttrs = {}
     for attrKey in Attributes
-      attrVal = attrs[attrKey] 
+      attrVal = attrs[attrKey]
       if attrVal?
         reqAttrs[attrKey] = attrVal
       else
@@ -148,7 +151,7 @@ class SQS
     url = @_nameToURL[QueueName]
     if not url?
       callback new Error("Queue with that name does not exist"), null
-    else 
+    else
       callback null, {QueueUrl:url}
 
   receiveMessage: (options, callback) ->

@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "A mock for the AWS SQS module",
   "dependencies": {
-    "coffee-script": "1.6.3"
+    "coffee-script": "1.6.3",
+    "async": "*"
   },
   "devDependencies": {
     "chai": "1.2.0",
